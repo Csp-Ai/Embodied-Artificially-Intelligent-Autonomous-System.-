@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .interfaces import EmbodimentAdapter
 from .planner import MissionPlanner
 from .policy import SafetyPolicy
 from .types import ActionKind, MissionEvent, MissionReport, MissionStatus
 from .verifier import Verifier
-from .world import DeterministicGridWorld
 
 
 @dataclass
@@ -23,7 +23,7 @@ class RufusBrain:
         }))
         return recoveries, recoveries <= self.max_recoveries
 
-    def run(self, world: DeterministicGridWorld) -> MissionReport:
+    def run(self, world: EmbodimentAdapter) -> MissionReport:
         planner = MissionPlanner()
         events: list[MissionEvent] = []
         recoveries = 0
@@ -45,7 +45,7 @@ class RufusBrain:
             if observation.delivered.value is True:
                 return MissionReport(MissionStatus.COMPLETED, "Delivery verified", step, tuple(events), observation)
 
-            action = planner.next_action(observation, world.width, world.height)
+            action = planner.next_action(observation, world.navigation_context())
             events.append(MissionEvent(step, "plan", action.reason, {
                 "action": action.kind.value,
                 "target": action.target,

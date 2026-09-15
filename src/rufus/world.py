@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 
+from .interfaces import NavigationContext
 from .types import (
     Action,
     ActionKind,
@@ -30,6 +31,9 @@ class DeterministicGridWorld:
     unknown_observations: dict[int, set[str]] = field(default_factory=dict)
     _action_count: int = 0
     _observation_count: int = 0
+
+    def navigation_context(self) -> NavigationContext:
+        return NavigationContext(self.width, self.height)
 
     def _in_bounds(self, p: Position) -> bool:
         return 0 <= p.x < self.width and 0 <= p.y < self.height
