@@ -29,17 +29,42 @@ The project is intentionally not a humanoid-hardware company, an LLM wrapper aro
 
 Rufus must move an object from an origin to a destination in simulation while handling controlled failures such as a blocked route, degraded perception, low energy, or an unsuccessful interaction. Success means more than finishing the task: Rufus must preserve state, explain the action path, recover when appropriate, and stop safely when it cannot justify continuing.
 
-See:
+## Run Rufus
+
+Core Rufus has no runtime dependencies beyond Python 3.11+:
+
+```bash
+python -m pip install -e .
+python -m rufus --backend grid --scenario nominal
+python -m rufus --backend grid --scenario dynamic-obstacle
+python -m rufus --backend grid --scenario partial-observation
+```
+
+For the first physics-backed embodiment:
+
+```bash
+python -m pip install -e '.[mujoco]'
+python -m rufus --backend mujoco --scenario nominal
+```
+
+The MuJoCo v0 backend physically steps planar motion and collision/contact behavior. Package pickup is still explicitly modeled as a **kinematic attachment**, not a physical robotic grasp.
+
+## Repository map
 
 - [`docs/VISION.md`](docs/VISION.md) — purpose and research thesis
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system boundaries and contracts
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — staged learning/build plan
 - [`docs/MISSION_001.md`](docs/MISSION_001.md) — first executable mission specification
+- [`docs/SIMULATION_STACK.md`](docs/SIMULATION_STACK.md) — simulator decision, truth boundary, and physics roadmap
+- `src/rufus/brain.py` — autonomy loop
+- `src/rufus/interfaces.py` — simulator/hardware boundary
+- `src/rufus/flight_recorder.py` — mission trace and replay
+- `src/rufus/adapters/` — optional simulation and future hardware adapters
 
 ## Status
 
-**Phase 0 — Foundation.** Define the brain, interfaces, truth model, mission contract, and evaluation criteria before selecting or coupling to a specific simulator or physical platform.
+**Phase 1 — Simulation-backed embodiment.** Rufus Brain, recovery, flight recording, and the simulator-neutral embodiment contract are established. The current milestone is moving Mission 001 from the deterministic grid into MuJoCo without changing the Brain.
 
 ## Working definition of success
 
-Rufus becomes credible when the same high-level autonomy loop can move from simulation to a real body without rewriting the brain around the hardware.
+Rufus becomes credible when the same high-level autonomy loop can move from deterministic tests → physics simulation → a real body without rewriting the brain around the hardware.
