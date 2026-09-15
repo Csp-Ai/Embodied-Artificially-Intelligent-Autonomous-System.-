@@ -1,7 +1,8 @@
 """Project Rufus: simulation-first embodied autonomy research."""
 
 from .brain import RufusBrain
+from .flight_recorder import FlightRecorder
 from .policy import SafetyPolicy
 from .world import DeterministicGridWorld
 
-__all__ = ["RufusBrain", "SafetyPolicy", "DeterministicGridWorld"]
+__all__ = ["RufusBrain", "FlightRecorder", "SafetyPolicy", "DeterministicGridWorld"]
