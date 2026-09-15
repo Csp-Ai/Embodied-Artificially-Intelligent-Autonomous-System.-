@@ -12,6 +12,9 @@ license = { file = "LICENSE" }
 authors = [{ name = "Christopher Salvador Ponce" }]
 dependencies = []
 
+[project.optional-dependencies]
+mujoco = ["mujoco>=3.3,<4"]
+
 [tool.setuptools]
 package-dir = {"" = "src"}
 
