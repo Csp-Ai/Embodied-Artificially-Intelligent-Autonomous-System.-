@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from .types import (
     Action,
@@ -26,13 +26,22 @@ class DeterministicGridWorld:
     delivered: bool = False
     pickup_failures_remaining: int = 0
     move_cost: int = 1
+    obstacle_injections: dict[int, set[Position]] = field(default_factory=dict)
+    unknown_observations: dict[int, set[str]] = field(default_factory=dict)
+    _action_count: int = 0
+    _observation_count: int = 0
 
     def _in_bounds(self, p: Position) -> bool:
         return 0 <= p.x < self.width and 0 <= p.y < self.height
 
+    @staticmethod
+    def _unknown(source: str):
+        return Fact(None, EpistemicStatus.UNKNOWN, source)
+
     def observe(self) -> WorldObservation:
+        self._observation_count += 1
         object_position = self.robot_position if self.carrying else self.object_position
-        return WorldObservation(
+        observation = WorldObservation(
             robot_position=Fact(self.robot_position, EpistemicStatus.OBSERVED, "world.robot_pose"),
             object_position=Fact(object_position, EpistemicStatus.OBSERVED, "world.object_pose"),
             destination=Fact(self.destination, EpistemicStatus.OBSERVED, "mission.destination"),
@@ -41,8 +50,21 @@ class DeterministicGridWorld:
             delivered=Fact(self.delivered, EpistemicStatus.OBSERVED, "world.delivery_state"),
             obstacles=Fact(frozenset(self.obstacles), EpistemicStatus.OBSERVED, "world.obstacle_map"),
         )
+        hidden = self.unknown_observations.get(self._observation_count, set())
+        valid = set(WorldObservation.__dataclass_fields__)
+        unknown_kwargs = {
+            name: self._unknown(getattr(observation, name).source)
+            for name in hidden
+            if name in valid
+        }
+        return replace(observation, **unknown_kwargs) if unknown_kwargs else observation
 
     def apply(self, action: Action) -> ActionResult:
+        self._action_count += 1
+        injected = self.obstacle_injections.get(self._action_count)
+        if injected:
+            self.obstacles.update(injected)
+
         if action.kind is ActionKind.ABORT:
             return ActionResult(True, action.reason or "Mission aborted")
 
