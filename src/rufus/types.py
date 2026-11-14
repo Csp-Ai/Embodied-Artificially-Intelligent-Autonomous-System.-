@@ -65,6 +65,11 @@ class PolicyDecision:
 class ActionResult:
     success: bool
     message: str
+    # A side effect may have happened even when its receipt is negative.
+    # Uncertainty forbids redispatch; retry_prohibited gives an adapter
+    # sole authority over recovery after the first action.
+    outcome_uncertain: bool = False
+    retry_prohibited: bool = False
 
 
 @dataclass(frozen=True)
