@@ -72,13 +72,31 @@ class RufusBrain:
                 return MissionReport(MissionStatus.ABORTED, policy.reason, step, tuple(events), observation)
 
             result = world.apply(action)
-            events.append(MissionEvent(step, "act", result.message, {"success": result.success}))
+            events.append(MissionEvent(step, "act", result.message, {
+                "success": result.success,
+                "outcome_uncertain": result.outcome_uncertain,
+                "retry_prohibited": result.retry_prohibited,
+            }))
 
             after = world.observe()
+            # A durable adapter may have already made an evidence-based
+            # decision. Uncertainty never permits the brain to redispatch.
+            if result.outcome_uncertain:
+                reason = "Action outcome uncertain; automatic redispatch prohibited"
+                events.append(MissionEvent(step, "verify", reason, {
+                    "success": False, "conclusive": False,
+                }))
+                events.append(MissionEvent(step, "abort", reason))
+                return MissionReport(MissionStatus.ABORTED, reason, step, tuple(events), after)
+
             verification = Verifier.verify(action, result, observation, after)
             events.append(MissionEvent(step, "verify", verification.message, {"success": verification.success}))
 
             if not verification.success:
+                if result.retry_prohibited:
+                    reason = "Post-action verification disagreed; adapter owns recovery; redispatch prohibited"
+                    events.append(MissionEvent(step, "abort", reason))
+                    return MissionReport(MissionStatus.ABORTED, reason, step, tuple(events), after)
                 recoveries, can_retry = self._recover_or_stop(events, recoveries, step, "Re-observe and re-plan")
                 if not can_retry:
                     return MissionReport(
