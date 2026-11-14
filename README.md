@@ -43,3 +43,15 @@ See:
 ## Working definition of success
 
 Rufus becomes credible when the same high-level autonomy loop can move from simulation to a real body without rewriting the brain around the hardware.
+
+
+## Optional RufusLoop integration
+
+The brain's `ActionResult` carries `outcome_uncertain` and `retry_prohibited` flags so a
+reliability adapter can prevent unsafe automatic redispatch after ambiguous side
+effects. Existing standalone Rufus simulations retain their previous behavior.
+A separate, simulation-only bridge in RufusLoop uses its SQLite durable attempt
+ledger and evidence reconciler behind the standard `EmbodimentAdapter` interface.
+
+See [the integration contract](docs/RUFUSLOOP_INTEGRATION.md). No private
+RufusLoop source, provider credentials, or hardware controls are included here.
